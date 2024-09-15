@@ -10,6 +10,8 @@ You can add new commands or things you want to remember so you can look them up 
 ![indxware.py](indxware-demo-1.gif)
 ![indxware.py](indxware-demo-2.gif)
 
+![indxware.py](indxware-demo-3.gif)
+
 * **Quick Recall**: Search through indexed notes or commands instantly. Type your search, press Enter to filter, and press Enter again to toggle back to the main list.
 * **Customizable Categories**: Organize your notes or commands under categories using the 'command.json' file.
 * **Resizing and Frameless Mode**: Resize the window for flexibility or toggle the frameless mode with `Ctrl+G`. 
