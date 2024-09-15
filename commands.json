@@ -1,0 +1,107 @@
+[
+    {
+        "category": "Global Commands",
+        "tag": "global"
+    },
+    ":q - Quit",
+    ":wq - Save and Quit",
+    ":w - Write (Save)",
+    ":help - Open Vim help for a topic",
+    ":sav[eas] file - Save file with a new name",
+    ":ter[minal] - Open a terminal window",
+    {
+        "category": "Cursor Movement",
+        "tag": "movement"
+    },
+    "h - Move cursor left",
+    "j - Move cursor down",
+    "k - Move cursor up",
+    "l - Move cursor right",
+    "w - Jump forwards to the start of a word",
+    "b - Jump backwards to the start of a word",
+    "gg - Go to the first line of the document",
+    "G - Go to the last line of the document",
+    {
+        "category": "Editing",
+        "tag": "editing"
+    },
+    "r - Replace a single character",
+    "R - Replace multiple characters until ESC",
+    "dd - Delete the current line",
+    "yy - Yank (copy) the current line",
+    "p - Paste after the cursor",
+    "P - Paste before the cursor",
+    "u - Undo",
+    "Ctrl + r - Redo",
+    {
+        "category": "Insert Mode",
+        "tag": "insert"
+    },
+    "i - Insert before the cursor",
+    "I - Insert at the beginning of the line",
+    "a - Append after the cursor",
+    "A - Append at the end of the line",
+    "o - Open a new line below the current line",
+    "O - Open a new line above the current line",
+    "Esc - Exit insert mode",
+    {
+        "category": "Visual Mode",
+        "tag": "visual"
+    },
+    "v - Start visual mode",
+    "V - Start linewise visual mode",
+    "Ctrl + v - Start visual block mode",
+    "y - Yank (copy) the selected text",
+    "d - Delete the selected text",
+    "> - Indent selected text",
+    "< - De-indent selected text",
+    "U - Convert selected text to uppercase",
+    "u - Convert selected text to lowercase",
+    {
+        "category": "Marks and Registers",
+        "tag": "marks"
+    },
+    ":marks - List all marks",
+    "ma - Set mark A at the cursor position",
+    "`a - Jump to mark A",
+    ":reg[isters] - Show registers content",
+    "\"xy - Yank into register x",
+    "\"xp - Paste contents from register x",
+    {
+        "category": "Exiting",
+        "tag": "exit"
+    },
+    ":q! - Quit without saving",
+    ":wq - Write and quit",
+    ":x - Save and quit",
+    ":wqa - Write all and quit",
+    {
+        "category": "Search and Replace",
+        "tag": "search"
+    },
+    "/pattern - Search for a pattern",
+    "?pattern - Search backwards for a pattern",
+    "n - Repeat the last search in the same direction",
+    "N - Repeat the last search in the opposite direction",
+    ":%s/old/new/g - Replace all occurrences of 'old' with 'new'",
+    ":noh[lsearch] - Remove search highlighting",
+    {
+        "category": "Tabs",
+        "tag": "tabs"
+    },
+    ":tabnew - Open a new tab",
+    ":tabn - Go to the next tab",
+    ":tabp - Go to the previous tab",
+    ":tabclose - Close the current tab",
+    ":tabdo command - Run the command in all tabs",
+    {
+        "category": "Splits",
+        "tag": "splits"
+    },
+    ":sp[lit] file - Open a file in a new horizontal split",
+    ":vs[plit] file - Open a file in a new vertical split",
+    "Ctrl + ws - Split window horizontally",
+    "Ctrl + wv - Split window vertically",
+    "Ctrl + ww - Switch between splits",
+    "Ctrl + wq - Quit the current split"
+]
