@@ -1,7 +1,7 @@
 
 # indxware.py
 
-**indxware.py** is a lightweight tool to quickly search and recall commands, notes, or any indexed data. I originally made this for VIM commands, but changed it to accent any JSON file for notes/commands.
+indxware.py is a lightweight tool to quickly search and recall commands, notes, or any indexed data. I originally made this for VIM commands, but changed it to accept any JSON file for notes/commands.
 
 ## Features
 
