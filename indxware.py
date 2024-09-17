@@ -1,50 +1,50 @@
 import sys
 import json
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QScrollArea, QMessageBox, QMenu, QAction, QShortcut
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QScrollArea, QMessageBox, QMenu, QAction, QShortcut, QFileDialog
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
 
 # ===================
 # Colors
 # ===================
-BG = "#232634"  # Background color
-TEXT = "#cad3f5"  # Default text color
-ACCENT = "#b7bdf8"  # Highlighted text color
-HIGHLIGHT = "#3b4261"  # Background highlight color
-COMMAND_COLOR = "#f5bde6"  # Command text color (pink)
-CATEGORY_COLOR = "#ff9e64"  # Category title color (orange)
+BG = "#232634"
+TEXT = "#cad3f5"
+ACCENT = "#b7bdf8"
+HIGHLIGHT = "#3b4261"
+COMMAND_COLOR = "#f5bde6"
+CATEGORY_COLOR = "#ff9e64"
 
-DIVIDER = '-'  # Divider symbol, seperates note title and text in JSON file.
+DIVIDER = '-'  # Divider symbol, separates note title and text in JSON file
 
-COMMANDS_FILE = 'commands.json'  # Name of JSON file to load/save commands
+DEFAULT_JSON_FILE = ''  # Default JSON file
 
-# ===================
-# Hotkeys
-# ===================
 SHORTCUTS = {
-    "save_commands": "Ctrl+S",   # Shortcut to save command list
-    "load_commands": "Ctrl+L",   # Shortcut to load command list
-    "exit": "Ctrl+Q",            # Shortcut to exit the application
-    "toggle_frameless": "Ctrl+G"  # Shortcut to toggle frameless window
+    "load_commands": "Ctrl+L",
+    "exit": "Ctrl+Q",
+    "toggle_frameless": "Ctrl+G",
+    "toggle_opacity": "Ctrl+U"
 }
 
+# Set two preset opacity values for toggling
+OPACITY_LEVEL_1 = 0.95  # Default higher opacity
+OPACITY_LEVEL_2 = 0.8   # Lower opacity
 
 class StickyNote(QWidget):
-    def __init__(self):
+    def __init__(self, json_file=DEFAULT_JSON_FILE):
         super().__init__()
-        self.frameless = True  
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)  # Start in frameless mode
-        self.setGeometry(50, 50, 300, 400)  # Initial size and position
-        self.setMinimumSize(250, 200)  
+        self.json_file = json_file
+        self.frameless = True
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setGeometry(50, 50, 300, 400)
+        self.setMinimumSize(250, 200)
+        self.opacity = OPACITY_LEVEL_1  # Default opacity level
+        self.setWindowOpacity(self.opacity)
         self.setStyleSheet(f"background-color: {BG}; border-radius: 10px;")
         self.initUI()
         self.initShortcuts()
         self.load_commands()
 
-    # ===================
-    # UI Setup
-    # ===================
     def initUI(self):
         layout = QVBoxLayout()
 
@@ -58,9 +58,15 @@ class StickyNote(QWidget):
             background-color: {HIGHLIGHT}; 
             border-radius: 5px;
         """)
-        self.searchBar.textChanged.connect(self.highlight_commands)  
+        self.searchBar.textChanged.connect(self.highlight_commands)
         self.searchBar.returnPressed.connect(self.toggle_search_filter)
         layout.addWidget(self.searchBar)
+
+        # Display current JSON file name
+        self.json_label = QLabel(self)
+        self.json_label.setAlignment(Qt.AlignRight)
+        self.json_label.setStyleSheet(f"color: {ACCENT}; padding-right: 10px; font-size: 16px;")
+        layout.addWidget(self.json_label)
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
@@ -75,41 +81,32 @@ class StickyNote(QWidget):
 
         self.setLayout(layout)
 
-        # Right-click menu
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
-        self.filtered = False  # Filter toggle state
+        self.filtered = False
 
-    # ===================
-    # Shortcut/Hotkey Setup
-    # ===================
     def initShortcuts(self):
-        """Initialize keyboard shortcuts."""
-        QShortcut(QKeySequence(SHORTCUTS["save_commands"]), self, self.save_commands)
-        QShortcut(QKeySequence(SHORTCUTS["load_commands"]), self, self.load_commands)
+        QShortcut(QKeySequence(SHORTCUTS["load_commands"]), self, self.load_commands_popup)
         QShortcut(QKeySequence(SHORTCUTS["exit"]), self, self.close)
         QShortcut(QKeySequence(SHORTCUTS["toggle_frameless"]), self, self.toggle_frameless)
+        QShortcut(QKeySequence(SHORTCUTS["toggle_opacity"]), self, self.toggle_opacity)  # For toggling opacity
 
-    # ===================
-    # Right-click Menu
-    # ===================
     def show_context_menu(self, pos):
-        """Display context menu with right-click options."""
         context_menu = QMenu(self)
         context_menu.setStyleSheet(f"color: {TEXT}; background-color: {BG};")
 
-        save_action = QAction(f"Save Commands ({SHORTCUTS['save_commands']})", self)
-        save_action.triggered.connect(self.save_commands)
-        context_menu.addAction(save_action)
-
         load_action = QAction(f"Load Commands ({SHORTCUTS['load_commands']})", self)
-        load_action.triggered.connect(self.load_commands)
+        load_action.triggered.connect(self.load_commands_popup)
         context_menu.addAction(load_action)
 
         toggle_frameless_action = QAction(f"Toggle Frameless ({SHORTCUTS['toggle_frameless']})", self)
         toggle_frameless_action.triggered.connect(self.toggle_frameless)
         context_menu.addAction(toggle_frameless_action)
+
+        toggle_opacity_action = QAction(f"Toggle Opacity ({SHORTCUTS['toggle_opacity']})", self)  # Added for toggle opacity
+        toggle_opacity_action.triggered.connect(self.toggle_opacity)
+        context_menu.addAction(toggle_opacity_action)
 
         exit_action = QAction(f"Exit ({SHORTCUTS['exit']})", self)
         exit_action.triggered.connect(self.close)
@@ -117,55 +114,31 @@ class StickyNote(QWidget):
 
         context_menu.exec_(self.mapToGlobal(pos))
 
-    # ===================
-    # Commands and Display
-    # ===================
+    def load_commands_popup(self): 
+        file_dialog = QFileDialog()
+        self.json_file, _ = file_dialog.getOpenFileName(self, "Select JSON file", "", "JSON Files (*.json)")
+        if self.json_file:
+            self.load_commands()
+
     def load_commands(self):
-        """Load commands from JSON file."""
-        if os.path.exists(COMMANDS_FILE):
+        if os.path.exists(self.json_file):
             try:
-                with open(COMMANDS_FILE, 'r') as file:
+                with open(self.json_file, 'r') as file:
                     self.commands = json.load(file)
+                    self.json_label.setText(os.path.basename(self.json_file).replace('.json', ''))
             except json.JSONDecodeError:
                 self.show_popup("Error", "Failed to load the command list. File might be corrupted.", "critical")
                 self.commands = []
         else:
-            # Default command set (VIM)
-            self.commands = [
-                { "category": "Global Commands" },
-                ":w - Save",
-                ":q - Quit",
-                ":wq - Save and Quit",
-                { "category": "Editing" },
-                "i - Insert Mode",
-                "dd - Delete Line",
-                "yy - Yank Line",
-                "p - Paste",
-                { "category": "Search and Replace" },
-                "/search - Search",
-                ":s - Replace",
-                "u - Undo",
-                "Ctrl+r - Redo"
-            ]
+            self.commands = []
         self.display_commands()
 
-    def save_commands(self):
-        try:
-            with open(COMMANDS_FILE, 'w') as file:
-                json.dump(self.commands, file, indent=4)
-            self.show_popup("Success", "Commands saved successfully.", "information")
-        except Exception as e:
-            self.show_popup("Error", f"Failed to save the command list: {e}", "critical")
-
     def display_commands(self):
-
-        # Clear the layout first
         for i in reversed(range(self.commandLayout.count())):
             widget = self.commandLayout.itemAt(i).widget()
             if widget is not None:
                 widget.deleteLater()
 
-        # Add commands to the layout
         self.command_labels = []
         for command in self.commands:
             label = self.create_command_label(command)
@@ -173,43 +146,41 @@ class StickyNote(QWidget):
             self.commandLayout.addWidget(label)
 
     def create_command_label(self, command):
-
         label = QLabel(self)
 
         if isinstance(command, dict) and "category" in command:
-            # Display category
             label.setText(f'<span style="color:{CATEGORY_COLOR};"><b>{command["category"]}</b></span>')
             label.setStyleSheet(f"padding: 5px; font-size: 16px;")
         else:
-            # Display command
             if DIVIDER in command:
                 cmd, desc = command.split(DIVIDER, 1)
             else:
                 cmd, desc = command, ""
-
             label.setText(f'<span style="color:{COMMAND_COLOR};">{cmd.strip()}</span> {DIVIDER} <span style="color:{TEXT};">{desc.strip()}</span>')
             label.setStyleSheet(f"padding: 5px; font-size: 14px;")
             label.setTextFormat(Qt.RichText)
 
+        # Allow text selection
+        label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         return label
 
-    # ===================
-    # Toggle Frameless Window
-    # ===================
     def toggle_frameless(self):
-
-        self.frameless = not self.frameless  # Toggle
+        self.frameless = not self.frameless
         if self.frameless:
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         else:
             self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
-        self.show()  
+        self.show()
 
-    # ===================
-    # Search and Highlighting
-    # ===================
+    def toggle_opacity(self):
+        # Toggle between the two preset opacity levels
+        if self.opacity == OPACITY_LEVEL_1:
+            self.opacity = OPACITY_LEVEL_2
+        else:
+            self.opacity = OPACITY_LEVEL_1
+        self.setWindowOpacity(self.opacity)
+
     def highlight_commands(self):
-        """Highlight matching commands based on the search term."""
         search_term = self.searchBar.text().lower()
         for label in self.command_labels:
             label_text = label.text().lower()
@@ -233,7 +204,6 @@ class StickyNote(QWidget):
         search_term = self.searchBar.text().lower()
 
         if not self.filtered and search_term != "":
-            # Filter and show only matching commands
             for label in self.command_labels:
                 if search_term in label.text().lower():
                     label.show()
@@ -241,14 +211,10 @@ class StickyNote(QWidget):
                     label.hide()
             self.filtered = True
         else:
-            # Show all commands
             self.display_commands()
-            self.highlight_commands() 
+            self.highlight_commands()
             self.filtered = False
 
-    # ===================
-    # Utility
-    # ===================
     def show_popup(self, title, message, icon_type="information"):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(title)
@@ -279,7 +245,6 @@ class StickyNote(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    # Set default font
     font = QFont()
     font.setFamily("Arial")
     font.setPointSize(12)
